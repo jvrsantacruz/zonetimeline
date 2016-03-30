@@ -14,21 +14,22 @@ def cli():
     click.echo(u'local time: {}'.format(local))
     click.echo()
 
+    render_marker(u'↓↓')
+    render_times(u'UTC:        ', utc)
+    render_times(u'local time: ', local)
+    render_marker(u'↑↑')
+
+
+def render_times(name, now):
+    render_timeline(
+        header=lambda: name,
+        tick=lambda h: u'{:2d}   '.format((now.hour + h) % 24))
+
+
+def render_marker(marker):
     render_timeline(
         header=lambda: u'            ',
-        tick=lambda h: u'↓↓   ' if h == 0 else u'     ')
-
-    render_timeline(
-        header=lambda: u'UTC:        ',
-        tick=lambda h: u'{:2d}   '.format((utc.hour + h) % 24))
-
-    render_timeline(
-        header=lambda: u'local time: ',
-        tick=lambda h: u'{:2d}   '.format((local.hour + h) % 24))
-
-    render_timeline(
-        header=lambda: u'            ',
-        tick=lambda h: u'↑↑   ' if h == 0 else u'     ')
+        tick=lambda h: u'{}   '.format(marker) if h == 0 else u'     ')
 
 
 def render_timeline(header, tick):

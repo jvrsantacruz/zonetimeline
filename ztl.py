@@ -16,32 +16,28 @@ def cli():
     print(u'local time: {}'.format(local))
     print()
 
-    print(u'            ', end='')
-    for h in range(24):
-        if h == 0:
-            print(u'↓↓   ', end='')
-        else:
-            print(u'     ', end='')
-    print()
+    render_timeline(
+        header=lambda: u'            ',
+        tick=lambda h: u'↓↓   ' if h == 0 else u'     ')
 
-    print(u'UTC:        ', end='')
-    for h in range(24):
-        print(u'{:2d}   '.format((utc.hour + h) % 24), end='')
-    print()
+    render_timeline(
+        header=lambda: u'UTC:        ',
+        tick=lambda h: u'{:2d}   '.format((utc.hour + h) % 24))
 
-    print(u'local time: ', end='')
-    for h in range(24):
-        print(u'{:2d}   '.format((local.hour + h) % 24), end='')
-    print()
+    render_timeline(
+        header=lambda: u'local time: ',
+        tick=lambda h: u'{:2d}   '.format((local.hour + h) % 24))
 
-    print(u'            ', end='')
-    for h in range(24):
-        if h == 0:
-            print(u'↑↑   ', end='')
-        else:
-            print(u'     ', end='')
-    print()
+    render_timeline(
+        header=lambda: u'            ',
+        tick=lambda h: u'↑↑   ' if h == 0 else u'     ')
 
+
+def render_timeline(header, tick):
+    """Prints a timeline line"""
+    print(header(), end='')
+    for h in range(-12, 12):
+        print(tick(h), end='')
     print()
 
 

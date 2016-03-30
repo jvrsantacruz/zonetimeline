@@ -12,7 +12,7 @@ def cli():
     utc = datetime.datetime.utcnow()
     local = datetime.datetime.now()
 
-    print(u'UTC time: {}'.format(utc))
+    print(u'UTC time:   {}'.format(utc))
     print(u'local time: {}'.format(local))
     print()
 

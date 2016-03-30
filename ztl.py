@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import datetime
 
 import click
@@ -12,9 +10,9 @@ def cli():
     utc = datetime.datetime.utcnow()
     local = datetime.datetime.now()
 
-    print(u'UTC time:   {}'.format(utc))
-    print(u'local time: {}'.format(local))
-    print()
+    click.echo(u'UTC time:   {}'.format(utc))
+    click.echo(u'local time: {}'.format(local))
+    click.echo()
 
     render_timeline(
         header=lambda: u'            ',
@@ -34,11 +32,11 @@ def cli():
 
 
 def render_timeline(header, tick):
-    """Prints a timeline line"""
-    print(header(), end='')
+    """click.echos a timeline line"""
+    click.echo(header(), nl=False)
     for h in range(-12, 12):
-        print(tick(h), end='')
-    print()
+        click.echo(tick(h), nl=False)
+    click.echo()
 
 
 if __name__ == '__main__':

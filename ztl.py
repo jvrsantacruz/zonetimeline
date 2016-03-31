@@ -21,15 +21,15 @@ def cli():
 
 
 def utc_name(offset):
-    name = 'UTC'
+    name = u'UTC'
     if offset:
-        name += '+{}'.format(offset).ljust(3, ' ')
-    name += ' (local):'
+        name += u'+{}'.format(offset).ljust(3, ' ')
+    name += u' (local):'
     return name
 
 
 def utc_offset(utc, local):
-    return round((local - utc).total_seconds()) // 3600
+    return int(round((local - utc).total_seconds()) // 3600)
 
 
 def render_times(name, now):

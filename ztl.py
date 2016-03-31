@@ -9,16 +9,20 @@ def cli():
     """zone time line"""
     utc = datetime.datetime.utcnow()
     local = datetime.datetime.now()
+    ar = utc - datetime.timedelta(hours=4)
 
     local_header = render_header(local, utc, local=True)
-    utc_header = render_header(local, utc)
+    ar_header = render_header(ar, utc)
+    utc_header = render_header(utc, utc)
 
-    click.echo(u'{} {}'.format(utc_header, format_date(utc)))
     click.echo(u'{} {}'.format(local_header, format_date(local)))
+    click.echo(u'{} {}'.format(ar_header, format_date(ar)))
+    click.echo(u'{} {}'.format(utc_header, format_date(utc)))
     click.echo()
 
     render_marker(u'↓↓')
     render_date_timeline(local, utc, local=True)
+    render_date_timeline(ar, utc)
     render_date_timeline(utc, utc)
     render_marker(u'↑↑')
 

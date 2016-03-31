@@ -15,12 +15,13 @@ def cli():
     click.echo()
 
     render_marker(u'↓↓')
+    render_times(utc_name(local, utc) + u'  ', local)
     render_times(u'UTC:             ', utc)
-    render_times(utc_name(utc_offset(utc, local)) + u'  ', local)
     render_marker(u'↑↑')
 
 
-def utc_name(offset):
+def utc_name(local, utc):
+    offset = utc_offset(local, utc)
     name = u'UTC'
     if offset:
         name += u'+{}'.format(offset).ljust(3, ' ')
@@ -28,7 +29,7 @@ def utc_name(offset):
     return name
 
 
-def utc_offset(utc, local):
+def utc_offset(local, utc):
     return int(round((local - utc).total_seconds()) // 3600)
 
 

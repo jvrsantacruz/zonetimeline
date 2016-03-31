@@ -9,7 +9,7 @@ def cli():
     """zone time line"""
     utc = datetime.datetime.utcnow()
     local = datetime.datetime.now()
-    ar = utc - datetime.timedelta(hours=4)
+    ar = utc - datetime.timedelta(hours=3)  # UTC-3
 
     local_header = render_header(local, utc, local=True)
     ar_header = render_header(ar, utc)

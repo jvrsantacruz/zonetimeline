@@ -10,22 +10,34 @@ def cli():
     utc = datetime.datetime.utcnow()
     local = datetime.datetime.now()
 
-    click.echo(u'UTC time:   {}'.format(utc))
-    click.echo(u'local time: {}'.format(local))
+    local_header = render_header(local, utc, local=True)
+    utc_header = render_header(local, utc)
+
+    click.echo(u'{} {}'.format(utc_header, format_date(utc)))
+    click.echo(u'{} {}'.format(local_header, format_date(local)))
     click.echo()
 
     render_marker(u'↓↓')
-    render_times(utc_name(local, utc) + u'  ', local)
-    render_times(u'UTC:             ', utc)
+    render_times(local_header, local)
+    render_times(utc_header, utc)
     render_marker(u'↑↑')
 
 
-def utc_name(local, utc):
-    offset = utc_offset(local, utc)
+def render_header(d, utc, local=True):
+    return (utc_name(d, utc, local=local) + u':').ljust(17, ' ')
+
+
+def format_date(d, date_format=u'%Y-%m-%d %H:%M:%S'):
+    return d.strftime(date_format)
+
+
+def utc_name(d, utc, local=False):
+    offset = utc_offset(d, utc)
     name = u'UTC'
     if offset:
         name += u'+{}'.format(offset).ljust(3, ' ')
-    name += u' (local):'
+    if local:
+        name += u' (local)'
     return name
 
 

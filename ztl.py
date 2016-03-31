@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import io
 import datetime
 
 import click
@@ -15,16 +16,18 @@ def cli():
     ar_header = render_header(ar, utc)
     utc_header = render_header(utc, utc)
 
-    click.echo(u'{} {}'.format(local_header, format_date(local)))
-    click.echo(u'{} {}'.format(ar_header, format_date(ar)))
-    click.echo(u'{} {}'.format(utc_header, format_date(utc)))
-    click.echo()
+    ctx = Context()
+    ctx.add(u'{} {}'.format(local_header, format_date(local)))
+    ctx.add(u'{} {}'.format(ar_header, format_date(ar)))
+    ctx.add(u'{} {}'.format(utc_header, format_date(utc)))
+    ctx.add('')
 
-    render_marker(u'↓↓')
-    render_date_timeline(local, utc, local=True)
-    render_date_timeline(ar, utc)
-    render_date_timeline(utc, utc)
-    render_marker(u'↑↑')
+    ctx.add(render_marker(u'↓↓'))
+    ctx.add(render_date_timeline(local, utc, local=True))
+    ctx.add(render_date_timeline(ar, utc))
+    ctx.add(render_date_timeline(utc, utc))
+    ctx.add(render_marker(u'↑↑'))
+    ctx.render()
 
 
 def render_header(d, utc, local=False):
@@ -50,27 +53,35 @@ def utc_offset(local, utc):
 
 
 def render_date_timeline(d, utc, local=False):
-    render_times(render_header(d, utc, local=local), d)
+    return render_times(render_header(d, utc, local=local), d)
 
 
 def render_times(name, d):
-    render_line(
+    return render_line(
         header=lambda: name,
-        tick=lambda h: u'{:02d}   '.format((d.hour + h) % 24))
+        tick=lambda h: u'{:02d} · '.format((d.hour + h) % 24))
 
 
 def render_marker(marker):
-    render_line(
+    return render_line(
         header=lambda: u' ' * 17,
         tick=lambda h: u'{}   '.format(marker) if h == 0 else u'     ')
 
 
 def render_line(header, tick):
     """click.echos a timeline line"""
-    click.echo(header(), nl=False)
-    for h in range(-12, 12):
-        click.echo(tick(h), nl=False)
-    click.echo()
+    return header() + u''.join(tick(h) for h in range(-12, 12))
+
+
+class Context(object):
+    def __init__(self):
+        self.buffer = io.StringIO()
+
+    def add(self, text):
+        self.buffer.write(text + u'\n')
+
+    def render(self):
+        click.echo(self.buffer.getvalue())
 
 
 if __name__ == '__main__':

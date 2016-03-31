@@ -18,12 +18,12 @@ def cli():
     click.echo()
 
     render_marker(u'↓↓')
-    render_times(local_header, local)
-    render_times(utc_header, utc)
+    render_date_timeline(local, utc, local=True)
+    render_date_timeline(utc, utc)
     render_marker(u'↑↑')
 
 
-def render_header(d, utc, local=True):
+def render_header(d, utc, local=False):
     return (utc_name(d, utc, local=local) + u':').ljust(17, ' ')
 
 
@@ -35,7 +35,7 @@ def utc_name(d, utc, local=False):
     offset = utc_offset(d, utc)
     name = u'UTC'
     if offset:
-        name += u'+{}'.format(offset).ljust(3, ' ')
+        name += u'{:+02d}'.format(offset)
     if local:
         name += u' (local)'
     return name
@@ -45,19 +45,23 @@ def utc_offset(local, utc):
     return int(round((local - utc).total_seconds()) // 3600)
 
 
-def render_times(name, now):
-    render_timeline(
+def render_date_timeline(d, utc, local=False):
+    render_times(render_header(d, utc, local=local), d)
+
+
+def render_times(name, d):
+    render_line(
         header=lambda: name,
-        tick=lambda h: u'{:2d}   '.format((now.hour + h) % 24))
+        tick=lambda h: u'{:02d}   '.format((d.hour + h) % 24))
 
 
 def render_marker(marker):
-    render_timeline(
-        header=lambda: u'            ',
+    render_line(
+        header=lambda: u' ' * 17,
         tick=lambda h: u'{}   '.format(marker) if h == 0 else u'     ')
 
 
-def render_timeline(header, tick):
+def render_line(header, tick):
     """click.echos a timeline line"""
     click.echo(header(), nl=False)
     for h in range(-12, 12):

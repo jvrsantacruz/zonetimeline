@@ -57,6 +57,7 @@ class Context(object):
         self.timeline_start = -12
         self.timeline_end = 12
         self.timeline_range = range(self.timeline_start, self.timeline_end)
+        self.marker_progress_ratio = self.time.utc.hour / 60.
 
     def add_markers(self, upper, lower):
         self.markers = [upper, lower]
@@ -80,9 +81,14 @@ class Render(object):
 
     def build(self):
         self.compute_header_width()
-        self.compute_timeline_width(self._header_width)
+        self.compute_tick_width(self._header_width)
+        self.compute_marker_offset(self._tick_width)
+
+        # headers
         for name, date in self.ctx.zones:
             self.add_header(name, date)
+
+        # timelines
         self.render_marker(self.ctx.markers[0])
         for name, date in self.ctx.zones:
             self.add_timeline(name, date)
@@ -98,15 +104,19 @@ class Render(object):
         self.add(self.render_times(self.render_name(name), d))
 
     def compute_header_width(self):
-        self._header_width = (max(len(name) for name, _ in self.ctx.zones) +
-                              len(self._header_sep))
+        longest_header = max(len(name) for name, _ in self.ctx.zones)
+        self._header_width = longest_header + len(self._header_sep)
 
-    def compute_timeline_width(self, header_width):
+    def compute_tick_width(self, header_width):
         width, height = click.get_terminal_size()
         width -= header_width  # available timeline space
         # compute max fixed width a tick can be given the available space
         spaces_per_tick = float(width) / len(self.ctx.timeline_range)
         self._tick_width = int(math.floor(spaces_per_tick))
+
+    def compute_marker_offset(self, tick_width):
+        offset = int(math.floor(self.ctx.marker_progress_ratio * tick_width))
+        self._marker_offset = min(self._tick_width, offset)
 
     def render_name(self, name):
         return (name + self._header_sep).ljust(self._header_width, ' ')
@@ -123,7 +133,7 @@ class Render(object):
     def render_marker(self, sign):
         def render_tick(h):
             if h == 0:
-                return u'{}'.format(sign).ljust(self._tick_width)
+                return ' ' * self._marker_offset + sign.ljust(self._tick_width)
             return u' ' * self._tick_width
 
         self.add(self.render_line(

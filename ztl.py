@@ -12,21 +12,17 @@ def cli():
     local = datetime.datetime.now()
     ar = utc - datetime.timedelta(hours=3)  # UTC-3
 
-    local_header = render_header(local, utc, local=True)
-    ar_header = render_header(ar, utc)
-    utc_header = render_header(utc, utc)
-
     ctx = Context()
-    ctx.add(u'{} {}'.format(local_header, format_date(local)))
-    ctx.add(u'{} {}'.format(ar_header, format_date(ar)))
-    ctx.add(u'{} {}'.format(utc_header, format_date(utc)))
-    ctx.add('')
 
-    ctx.add(render_marker(u'↓↓'))
-    ctx.add(render_date_timeline(local, utc, local=True))
-    ctx.add(render_date_timeline(ar, utc))
-    ctx.add(render_date_timeline(utc, utc))
-    ctx.add(render_marker(u'↑↑'))
+    ctx.add_header(local, utc, local=True)
+    ctx.add_header(ar, utc)
+    ctx.add_header(utc, utc)
+
+    ctx.add_marker(u'↓↓')
+    ctx.add_timeline(local, utc, local=True)
+    ctx.add_timeline(ar, utc)
+    ctx.add_timeline(utc, utc)
+    ctx.add_marker(u'↑↑')
     ctx.render()
 
 
@@ -79,6 +75,16 @@ class Context(object):
 
     def add(self, text):
         self.buffer.write(text + u'\n')
+
+    def add_marker(self, sign):
+        self.add(render_marker(sign))
+
+    def add_header(self, d, utc, local=False):
+        header = render_header(d, utc, local=local)
+        self.add(u'{} {}'.format(header, format_date(d)))
+
+    def add_timeline(self, d, utc, local=False):
+        self.add(render_date_timeline(d, utc, local=local))
 
     def render(self):
         click.echo(self.buffer.getvalue())

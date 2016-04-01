@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import io
+import math
 import datetime
 
 import click
@@ -53,6 +54,9 @@ class Context(object):
         self.time = time
         self.zones = []
         self.markers = []
+        self.timeline_start = -12
+        self.timeline_end = 12
+        self.timeline_range = range(self.timeline_start, self.timeline_end)
 
     def add_markers(self, upper, lower):
         self.markers = [upper, lower]
@@ -67,6 +71,7 @@ class Render(object):
         self.buffer = io.StringIO()
         self._header_sep = u':   '
         self._header_width = None
+        self._tick_width = 3
 
     def render(self):
         if not self.buffer.tell():
@@ -75,6 +80,7 @@ class Render(object):
 
     def build(self):
         self.compute_header_width()
+        self.compute_timeline_width(self._header_width)
         for name, date in self.ctx.zones:
             self.add_header(name, date)
         self.render_marker(self.ctx.markers[0])
@@ -95,6 +101,13 @@ class Render(object):
         self._header_width = (max(len(name) for name, _ in self.ctx.zones) +
                               len(self._header_sep))
 
+    def compute_timeline_width(self, header_width):
+        width, height = click.get_terminal_size()
+        width -= header_width  # available timeline space
+        # compute max fixed width a tick can be given the available space
+        spaces_per_tick = float(width) / len(self.ctx.timeline_range)
+        self._tick_width = int(math.floor(spaces_per_tick))
+
     def render_name(self, name):
         return (name + self._header_sep).ljust(self._header_width, ' ')
 
@@ -102,19 +115,23 @@ class Render(object):
         return d.strftime(date_format)
 
     def render_times(self, name, d):
-        return self.render_line(
-            header=lambda: name,
-            tick=lambda h: u'{:02d} · '.format((d.hour + h) % 24))
+        def render_tick(h):
+            return u'{:02d}'.format((d.hour + h) % 24).ljust(self._tick_width)
+
+        return self.render_line(header=lambda: name, tick=render_tick)
 
     def render_marker(self, sign):
+        def render_tick(h):
+            if h == 0:
+                return u'{}'.format(sign).ljust(self._tick_width)
+            return u' ' * self._tick_width
+
         self.add(self.render_line(
-            header=lambda: u' ' * self._header_width,
-            tick=lambda h: u'{}   '.format(sign) if h == 0 else u'     '
-        ))
+            header=lambda: u' ' * self._header_width, tick=render_tick))
 
     def render_line(self, header, tick):
         """click.echos a timeline line"""
-        return header() + u''.join(tick(h) for h in range(-12, 12))
+        return header() + u''.join(tick(h) for h in self.ctx.timeline_range)
 
 
 if __name__ == '__main__':

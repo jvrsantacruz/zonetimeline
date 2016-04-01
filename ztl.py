@@ -9,11 +9,10 @@ import click
 def cli():
     """zone time line"""
     ctx = Context(Time())
-    ctx.add_marker(u'↓↓')
-    ctx.add_marker(u'↑↑')
+    ctx.add_markers(u'↓↓', u'↑↑')
     ctx.add_zone('local')
     ctx.add_zone(-3)
-    ctx.add_zone(0)
+    ctx.add_zone('utc')
 
     click.echo(Render(ctx).render())
 
@@ -23,10 +22,15 @@ class Time(object):
         self.utc = datetime.datetime.utcnow()
         self.local = datetime.datetime.now()
 
+    def zone(self, offset):
+        d = self.time(offset)
+        name = self.name(d)
+        return name, d
+
     def time(self, offset):
         if offset == 'local':
             return self.local
-        elif not offset:
+        elif offset == 0 or offset == 'utc':
             return self.utc
         else:
             return self.utc + datetime.timedelta(hours=offset)
@@ -50,13 +54,11 @@ class Context(object):
         self.zones = []
         self.markers = []
 
-    def add_marker(self, sign):
-        self.markers.append(sign)
+    def add_markers(self, upper, lower):
+        self.markers = [upper, lower]
 
-    def add_zone(self, zone):
-        d = self.time.time(zone)
-        name = self.time.name(d)
-        self.zones.append((name, d))
+    def add_zone(self, offset):
+        self.zones.append(self.time.zone(offset))
 
 
 class Render(object):

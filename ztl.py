@@ -8,86 +8,104 @@ import click
 @click.command()
 def cli():
     """zone time line"""
-    utc = datetime.datetime.utcnow()
-    local = datetime.datetime.now()
-    ar = utc - datetime.timedelta(hours=3)  # UTC-3
-
-    ctx = Context()
-
-    ctx.add_header(local, utc, local=True)
-    ctx.add_header(ar, utc)
-    ctx.add_header(utc, utc)
-
+    ctx = Context(Time())
     ctx.add_marker(u'↓↓')
-    ctx.add_timeline(local, utc, local=True)
-    ctx.add_timeline(ar, utc)
-    ctx.add_timeline(utc, utc)
     ctx.add_marker(u'↑↑')
-    ctx.render()
+    ctx.add_zone('local')
+    ctx.add_zone(-3)
+    ctx.add_zone(0)
+
+    click.echo(Render(ctx).render())
 
 
-def render_header(d, utc, local=False):
-    return (utc_name(d, utc, local=local) + u':').ljust(17, ' ')
+class Time(object):
+    def __init__(self):
+        self.utc = datetime.datetime.utcnow()
+        self.local = datetime.datetime.now()
 
+    def time(self, offset):
+        if offset == 'local':
+            return self.local
+        elif not offset:
+            return self.utc
+        else:
+            return self.utc + datetime.timedelta(hours=offset)
 
-def format_date(d, date_format=u'%Y-%m-%d %H:%M:%S'):
-    return d.strftime(date_format)
+    def name(self, d):
+        offset = self.utc_offset(d, self.utc)
+        name = u'UTC'
+        if offset:
+            name += u'{:+02d}'.format(offset)
+        if d == self.local:
+            name += u' (local)'
+        return name
 
-
-def utc_name(d, utc, local=False):
-    offset = utc_offset(d, utc)
-    name = u'UTC'
-    if offset:
-        name += u'{:+02d}'.format(offset)
-    if local:
-        name += u' (local)'
-    return name
-
-
-def utc_offset(local, utc):
-    return int(round((local - utc).total_seconds()) // 3600)
-
-
-def render_date_timeline(d, utc, local=False):
-    return render_times(render_header(d, utc, local=local), d)
-
-
-def render_times(name, d):
-    return render_line(
-        header=lambda: name,
-        tick=lambda h: u'{:02d} · '.format((d.hour + h) % 24))
-
-
-def render_marker(marker):
-    return render_line(
-        header=lambda: u' ' * 17,
-        tick=lambda h: u'{}   '.format(marker) if h == 0 else u'     ')
-
-
-def render_line(header, tick):
-    """click.echos a timeline line"""
-    return header() + u''.join(tick(h) for h in range(-12, 12))
+    def utc_offset(self, d, utc):
+        return int(round((d - utc).total_seconds()) // 3600)
 
 
 class Context(object):
-    def __init__(self):
+    def __init__(self, time):
+        self.time = time
+        self.zones = []
+        self.markers = []
+
+    def add_marker(self, sign):
+        self.markers.append(sign)
+
+    def add_zone(self, zone):
+        d = self.time.time(zone)
+        name = self.time.name(d)
+        self.zones.append((name, d))
+
+
+class Render(object):
+    def __init__(self, ctx):
+        self.ctx = ctx
         self.buffer = io.StringIO()
+
+    def render(self):
+        if not self.buffer.tell():
+            self.build()
+        return self.buffer.getvalue()
+
+    def build(self):
+        for name, date in self.ctx.zones:
+            self.add_header(name, date)
+        self.render_marker(self.ctx.markers[0])
+        for name, date in self.ctx.zones:
+            self.add_timeline(name, date)
+        self.render_marker(self.ctx.markers[1])
 
     def add(self, text):
         self.buffer.write(text + u'\n')
 
-    def add_marker(self, sign):
-        self.add(render_marker(sign))
+    def add_header(self, name, d):
+        self.add(u'{} {}'.format(self.render_name(name), self.render_date(d)))
 
-    def add_header(self, d, utc, local=False):
-        header = render_header(d, utc, local=local)
-        self.add(u'{} {}'.format(header, format_date(d)))
+    def add_timeline(self, name, d):
+        self.add(self.render_times(self.render_name(name), d))
 
-    def add_timeline(self, d, utc, local=False):
-        self.add(render_date_timeline(d, utc, local=local))
+    def render_name(self, name):
+        return (name + u':').ljust(17, ' ')
 
-    def render(self):
-        click.echo(self.buffer.getvalue())
+    def render_date(self, d, date_format=u'%Y-%m-%d %H:%M:%S'):
+        return d.strftime(date_format)
+
+    def render_times(self, name, d):
+        return self.render_line(
+            header=lambda: name,
+            tick=lambda h: u'{:02d} · '.format((d.hour + h) % 24))
+
+    def render_marker(self, sign):
+        self.add(self.render_line(
+            header=lambda: u' ' * 17,
+            tick=lambda h: u'{}   '.format(sign) if h == 0 else u'     '
+        ))
+
+    def render_line(self, header, tick):
+        """click.echos a timeline line"""
+        return header() + u''.join(tick(h) for h in range(-12, 12))
 
 
 if __name__ == '__main__':

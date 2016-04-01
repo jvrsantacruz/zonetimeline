@@ -65,6 +65,8 @@ class Render(object):
     def __init__(self, ctx):
         self.ctx = ctx
         self.buffer = io.StringIO()
+        self._header_sep = u':   '
+        self._header_width = None
 
     def render(self):
         if not self.buffer.tell():
@@ -72,6 +74,7 @@ class Render(object):
         return self.buffer.getvalue()
 
     def build(self):
+        self.compute_header_width()
         for name, date in self.ctx.zones:
             self.add_header(name, date)
         self.render_marker(self.ctx.markers[0])
@@ -83,13 +86,17 @@ class Render(object):
         self.buffer.write(text + u'\n')
 
     def add_header(self, name, d):
-        self.add(u'{} {}'.format(self.render_name(name), self.render_date(d)))
+        self.add(u'{}{}'.format(self.render_name(name), self.render_date(d)))
 
     def add_timeline(self, name, d):
         self.add(self.render_times(self.render_name(name), d))
 
+    def compute_header_width(self):
+        self._header_width = (max(len(name) for name, _ in self.ctx.zones) +
+                              len(self._header_sep))
+
     def render_name(self, name):
-        return (name + u':').ljust(17, ' ')
+        return (name + self._header_sep).ljust(self._header_width, ' ')
 
     def render_date(self, d, date_format=u'%Y-%m-%d %H:%M:%S'):
         return d.strftime(date_format)
@@ -101,7 +108,7 @@ class Render(object):
 
     def render_marker(self, sign):
         self.add(self.render_line(
-            header=lambda: u' ' * 17,
+            header=lambda: u' ' * self._header_width,
             tick=lambda h: u'{}   '.format(sign) if h == 0 else u'     '
         ))
 

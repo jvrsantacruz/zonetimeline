@@ -120,7 +120,7 @@ class Render(object):
 
     def compute_marker_offset(self, tick_width):
         offset = int(math.floor(self.ctx.marker_progress_ratio * tick_width))
-        self._marker_offset = min(self._tick_width, offset)
+        self._marker_offset = min(tick_width, offset)
 
     def render_name(self, name):
         return (name + self._header_sep).ljust(self._header_width, ' ')

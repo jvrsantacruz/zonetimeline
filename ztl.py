@@ -147,7 +147,3 @@ class Render(object):
     def render_line(self, header, tick):
         """click.echos a timeline line"""
         return header() + u''.join(tick(h) for h in self.ctx.timeline_range)
-
-
-if __name__ == '__main__':
-    cli()

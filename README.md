@@ -2,6 +2,8 @@
 Compare several timezones in the command line
 
 ```
+$ ztl
+
 UTC+2 (local):    2016-03-31 12:38:41
 UTC-4:            2016-03-31 06:38:41
 UTC:              2016-03-31 10:38:41

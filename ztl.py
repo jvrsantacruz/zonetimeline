@@ -126,14 +126,19 @@ class Render(object):
 
     def render_times(self, name, d):
         def render_tick(h):
-            return u'{:02d}'.format((d.hour + h) % 24).ljust(self._tick_width)
+            text = u'{:02d}'.format((d.hour + h) % 24)
+            text = text.ljust(self._tick_width)
+            if h == 0:
+                text = click.style(text, bold=True)
+            return text
 
         return self.render_line(header=lambda: name, tick=render_tick)
 
     def render_marker(self, sign):
         def render_tick(h):
             if h == 0:
-                return ' ' * self._marker_offset + sign.ljust(self._tick_width)
+                return click.style(' ' * self._marker_offset +
+                                   sign.ljust(self._tick_width), bold=True)
             return u' ' * self._tick_width
 
         self.add(self.render_line(

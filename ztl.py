@@ -9,9 +9,10 @@ import tzlocal
 
 
 @click.command()
-def cli():
+@click.option('-n', '--nhours', default=24, show_default=True)
+def cli(nhours):
     """zone time line"""
-    ctx = Context(Time())
+    ctx = Context(Time(), nhours=nhours)
     ctx.add_markers(u'↓↓', u'↑↑')
     ctx.add_zone('local')
     ctx.add_zone(-3)

@@ -3,7 +3,9 @@ import io
 import math
 import datetime
 
+import pytz
 import click
+import tzlocal
 
 
 @click.command()
@@ -13,40 +15,42 @@ def cli():
     ctx.add_markers(u'↓↓', u'↑↑')
     ctx.add_zone('local')
     ctx.add_zone(-3)
-    ctx.add_zone('utc')
+    ctx.add_zone('UTC')
 
     click.echo(Render(ctx).render())
 
 
 class Time(object):
     def __init__(self):
-        self.utc = datetime.datetime.utcnow()
-        self.local = datetime.datetime.now()
+        self.utc = pytz.utc.localize(datetime.datetime.utcnow())
+        self.local = tzlocal.get_localzone().localize(datetime.datetime.now())
 
     def zone(self, offset):
         d = self.time(offset)
         name = self.name(d)
         return name, d
 
-    def time(self, offset):
-        if offset == 'local':
+    def time(self, name):
+        if name == 'local':
             return self.local
-        elif offset == 0 or offset == 'utc':
-            return self.utc
+        elif name in pytz.all_timezones:
+            return self.utc.astimezone(pytz.timezone(name))
         else:
-            return self.utc + datetime.timedelta(hours=offset)
+            return self.utc + datetime.timedelta(hours=int(name))
 
     def name(self, d):
-        offset = self.utc_offset(d, self.utc)
-        name = u'UTC'
-        if offset:
-            name += u'{:+02d}'.format(offset)
+        name = str(d.tzinfo)
+
+        if name == 'UTC' and d != self.utc:  # calculated upon UTC
+            name += u'{:+02d}'.format(self.utc_offset(d))
+
         if d == self.local:
             name += u' (local)'
+
         return name
 
-    def utc_offset(self, d, utc):
-        return int(round((d - utc).total_seconds()) // 3600)
+    def utc_offset(self, d):
+        return int((d - self.utc).total_seconds() // 3600)
 
 
 class Context(object):

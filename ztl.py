@@ -11,10 +11,11 @@ import tzlocal
 
 @click.command()
 @click.option('-n', '--nhours', default=24, show_default=True)
-def cli(nhours):
+@click.option('-z', '--zone', multiple=True, show_default=True)
+def cli(nhours, zone):
     """zone time line"""
     ctx = Context(Time(), nhours=nhours, marker_top=u'↓↓', marker_bottom=u'↑↑',
-                  zones=['local', -3, 'UTC'])
+                  zones=['local', -3, 'UTC'] + list(zone))
     click.echo(Render(ctx).render())
 
 

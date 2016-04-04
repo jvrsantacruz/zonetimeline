@@ -2,6 +2,7 @@
 import io
 import math
 import datetime
+import collections
 
 import pytz
 import click
@@ -17,6 +18,9 @@ def cli(nhours):
     click.echo(Render(ctx).render())
 
 
+Zone = collections.namedtuple('Zone', ['label', 'date', 'name'])
+
+
 class Time(object):
     def __init__(self):
         self.utc = pytz.utc.localize(datetime.datetime.utcnow())
@@ -25,7 +29,7 @@ class Time(object):
     def zone(self, name):
         d = self.time(name)
         label = self.label(d)
-        return label, d
+        return Zone(label, d, name)
 
     def time(self, name):
         if name == 'local':
@@ -80,13 +84,13 @@ class Render(object):
         self.compute_marker_offset(self._tick_width)
 
         # headers
-        for name, date in self.ctx.zones:
-            self.add_header(name, date)
+        for zone in self.ctx.zones:
+            self.add_header(zone.label, zone.date)
 
         # timelines
         self.render_marker(self.ctx.markers[0])
-        for name, date in self.ctx.zones:
-            self.add_timeline(name, date)
+        for zone in self.ctx.zones:
+            self.add_timeline(zone.label, zone.date)
         self.render_marker(self.ctx.markers[1])
 
     def add(self, text):
@@ -99,7 +103,7 @@ class Render(object):
         self.add(self.render_times(self.render_name(name), d))
 
     def compute_header_width(self):
-        longest_header = max(len(name) for name, _ in self.ctx.zones)
+        longest_header = max(len(zone.label) for zone in self.ctx.zones)
         self._header_width = longest_header + len(self._header_sep)
 
     def compute_tick_width(self, header_width):

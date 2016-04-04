@@ -12,12 +12,8 @@ import tzlocal
 @click.option('-n', '--nhours', default=24, show_default=True)
 def cli(nhours):
     """zone time line"""
-    ctx = Context(Time(), nhours=nhours)
-    ctx.add_markers(u'↓↓', u'↑↑')
-    ctx.add_zone('local')
-    ctx.add_zone(-3)
-    ctx.add_zone('UTC')
-
+    ctx = Context(Time(), nhours=nhours, marker_top=u'↓↓', marker_bottom=u'↑↑',
+                  zones=['local', -3, 'UTC'])
     click.echo(Render(ctx).render())
 
 
@@ -55,20 +51,14 @@ class Time(object):
 
 
 class Context(object):
-    def __init__(self, time):
+    def __init__(self, time, zones, nhours, marker_top, marker_bottom):
         self.time = time
-        self.zones = []
-        self.markers = []
-        self.timeline_start = -12
-        self.timeline_end = 12
+        self.zones = tuple(map(self.time.zone, zones))
+        self.markers = [marker_top, marker_bottom]
+        self.timeline_start = -1 * (nhours // 2)
+        self.timeline_end = (nhours // 2)
         self.timeline_range = range(self.timeline_start, self.timeline_end)
         self.marker_progress_ratio = self.time.utc.hour / 60.
-
-    def add_markers(self, upper, lower):
-        self.markers = [upper, lower]
-
-    def add_zone(self, offset):
-        self.zones.append(self.time.zone(offset))
 
 
 class Render(object):

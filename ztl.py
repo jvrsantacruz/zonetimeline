@@ -25,10 +25,10 @@ class Time(object):
         self.utc = pytz.utc.localize(datetime.datetime.utcnow())
         self.local = tzlocal.get_localzone().localize(datetime.datetime.now())
 
-    def zone(self, offset):
-        d = self.time(offset)
-        name = self.name(d)
-        return name, d
+    def zone(self, name):
+        d = self.time(name)
+        label = self.label(d)
+        return label, d
 
     def time(self, name):
         if name == 'local':
@@ -38,16 +38,16 @@ class Time(object):
         else:
             return self.utc + datetime.timedelta(hours=int(name))
 
-    def name(self, d):
-        name = str(d.tzinfo)
+    def label(self, d):
+        label = str(d.tzinfo)
 
-        if name == 'UTC' and d != self.utc:  # calculated upon UTC
-            name += u'{:+02d}'.format(self.utc_offset(d))
+        if label == 'UTC' and d != self.utc:  # calculated upon UTC
+            label += u'{:+02d}'.format(self.utc_offset(d))
 
         if d == self.local:
-            name += u' (local)'
+            label += u' (local)'
 
-        return name
+        return label
 
     def utc_offset(self, d):
         return int((d - self.utc).total_seconds() // 3600)

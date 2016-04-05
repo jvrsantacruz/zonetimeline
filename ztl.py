@@ -1,22 +1,45 @@
 # -*- coding: utf-8 -*-
 import io
+import os
 import math
 import datetime
 import collections
 
 import pytz
 import click
+import pytoml
 import tzlocal
+
+
+DEFAULT_CONFIG = os.path.join(click.get_app_dir('zonetimeline'), 'config')
 
 
 @click.command()
 @click.option('-n', '--nhours', default=24, show_default=True)
 @click.option('-z', '--zone', multiple=True, show_default=True)
-def cli(nhours, zone):
+@click.option('-c', '--config', type=click.Path(dir_okay=False, exists=True))
+def cli(config, **options):
     """zone time line"""
-    ctx = Context(Time(), nhours=nhours, marker_top=u'↓↓', marker_bottom=u'↑↑',
-                  zones=['local', -3, 'UTC'] + list(zone))
-    click.echo(Render(ctx).render())
+    update_no_override(options, parse_config(config or DEFAULT_CONFIG))
+    options.update(marker_top=u'↓↓', marker_bottom=u'↑↑')
+    ctx = Context(Time(), **options)
+    click.echo(Render(ctx).render(), nl=False)
+
+
+def update_no_override(d, defaults):
+    d.update((k, v) for k, v in defaults.items()
+             if d.get(k) in (None, tuple()))
+
+
+def parse_config(path):
+    if path is None or not os.path.exists(path):
+        return {}
+
+    try:
+        with io.open(path, 'r', encoding='utf-8') as stream:
+            return pytoml.load(stream)['general']
+    except IOError as error:
+        raise click.ClickException(error)
 
 
 Zone = collections.namedtuple('Zone', ['label', 'date', 'name'])
@@ -56,9 +79,9 @@ class Time(object):
 
 
 class Context(object):
-    def __init__(self, time, zones, nhours, marker_top, marker_bottom):
+    def __init__(self, time, zone, nhours, marker_top, marker_bottom):
         self.time = time
-        self.zones = tuple(map(self.time.zone, zones))
+        self.zones = tuple(map(self.time.zone, zone))
         self.markers = [marker_top, marker_bottom]
         self.timeline_start = -1 * (nhours // 2)
         self.timeline_end = (nhours // 2)

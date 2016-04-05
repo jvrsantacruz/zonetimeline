@@ -139,7 +139,10 @@ class Render(object):
             if h == 0:
                 return click.style(' ' * self._marker_offset +
                                    sign.ljust(self._tick_width), bold=True)
-            return u' ' * self._tick_width
+            elif h < 0:
+                return u' ' * self._tick_width
+            else:
+                return u''
 
         self.add(self.render_line(
             header=lambda: u' ' * self._header_width, tick=render_tick))

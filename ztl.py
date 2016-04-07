@@ -15,9 +15,12 @@ DEFAULT_CONFIG = os.path.join(click.get_app_dir('zonetimeline'), 'config')
 
 
 @click.command()
-@click.option('-n', '--nhours', default=24, show_default=True)
-@click.option('-z', '--zone', multiple=True, show_default=True)
-@click.option('-c', '--config', type=click.Path(dir_okay=False, exists=True))
+@click.option('-n', '--nhours', default=24, show_default=True,
+              help=u"Number of hours to display")
+@click.option('-z', '--zone', multiple=True,
+              help=u"Add extra timezone [repeat]")
+@click.option('-c', '--config', type=click.Path(dir_okay=False, exists=True),
+              help=u"Configuration file [default: %s]" % DEFAULT_CONFIG)
 def cli(config, **options):
     """zone time line"""
     update_no_override(options, parse_config(config or DEFAULT_CONFIG))

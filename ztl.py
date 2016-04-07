@@ -3,6 +3,7 @@ import io
 import os
 import math
 import datetime
+import itertools
 import collections
 
 import pytz
@@ -14,11 +15,27 @@ import tzlocal
 DEFAULT_CONFIG = os.path.join(click.get_app_dir('zonetimeline'), 'config')
 
 
+class List(click.ParamType):
+    """Comma separated list"""
+    name = 'list'
+
+    def convert(self, value, param, ctx):
+        if not value:
+            return tuple()
+
+        try:
+            return tuple(value.split(','))
+        except ValueError:
+            self.fail(u'%s is not a comma separated list' % value, param, ctx)
+
+
 @click.command()
 @click.option('-n', '--nhours', default=24, show_default=True,
               help=u"Number of hours to display")
 @click.option('-z', '--zone', multiple=True,
               help=u"Add extra timezone [repeat]")
+@click.option('-Z', '--zones', type=List(), default=tuple(),
+              help=u"Comma separated list of timezones")
 @click.option('-c', '--config', type=click.Path(dir_okay=False, exists=True),
               help=u"Configuration file [default: %s]" % DEFAULT_CONFIG)
 def cli(config, **options):
@@ -82,9 +99,9 @@ class Time(object):
 
 
 class Context(object):
-    def __init__(self, time, zone, nhours, marker_top, marker_bottom):
+    def __init__(self, time, zone, zones, nhours, marker_top, marker_bottom):
         self.time = time
-        self.zones = tuple(map(self.time.zone, zone))
+        self.zones = tuple(map(self.time.zone, itertools.chain(zones, zone)))
         self.markers = [marker_top, marker_bottom]
         self.timeline_start = -1 * (nhours // 2)
         self.timeline_end = (nhours // 2)

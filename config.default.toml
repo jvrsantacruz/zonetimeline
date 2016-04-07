@@ -1,0 +1,9 @@
+[general]
+# Number of hours to display in the timeline
+# nhours = 24
+
+# List of timezones for which create a timeline
+# zones = ["Europe/Madrid", "America/Buenos_Aires", "UTC"]
+
+# Extra timezones to add to the timezone list
+# zone = []

@@ -45,6 +45,7 @@ def cli(config, **options):
     update_no_override(options, parse_config(config or DEFAULT_CONFIG))
     options.update(marker_top=u'↓↓', marker_bottom=u'↑↑')
     ctx = Context(Time(), **options)
+    ctx.validate()
     click.echo(Render(ctx).render(), nl=False)
 
 
@@ -111,6 +112,11 @@ class Context(object):
         self.timeline_range = range(self.timeline_start, self.timeline_end)
         self.marker_progress_ratio = self.time.utc.hour / 60.
         self.screen_width = width
+
+    def validate(self):
+        if not self.zones:
+            raise click.BadOptionUsage(
+                'No timezones given. Use the options --zone or --zones')
 
 
 class Render(object):

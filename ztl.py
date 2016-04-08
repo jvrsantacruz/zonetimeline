@@ -38,6 +38,8 @@ class List(click.ParamType):
               help=u"Comma separated list of timezones")
 @click.option('-c', '--config', type=click.Path(dir_okay=False, exists=True),
               help=u"Configuration file [default: %s]" % DEFAULT_CONFIG)
+@click.option('-w', '--width', default=click.get_terminal_size()[0],
+              show_default=True, help=u"Screen width")
 def cli(config, **options):
     """zone time line"""
     update_no_override(options, parse_config(config or DEFAULT_CONFIG))
@@ -99,7 +101,8 @@ class Time(object):
 
 
 class Context(object):
-    def __init__(self, time, zone, zones, nhours, marker_top, marker_bottom):
+    def __init__(self, time, zone, zones, nhours, marker_top, marker_bottom,
+                 width):
         self.time = time
         self.zones = tuple(map(self.time.zone, itertools.chain(zones, zone)))
         self.markers = [marker_top, marker_bottom]
@@ -107,6 +110,7 @@ class Context(object):
         self.timeline_end = (nhours // 2)
         self.timeline_range = range(self.timeline_start, self.timeline_end)
         self.marker_progress_ratio = self.time.utc.hour / 60.
+        self.screen_width = width
 
 
 class Render(object):
@@ -151,8 +155,7 @@ class Render(object):
         self._header_width = longest_header + len(self._header_sep)
 
     def compute_tick_width(self, header_width):
-        width, height = click.get_terminal_size()
-        width -= header_width  # available timeline space
+        width = self.ctx.screen_width - header_width  # timeline space
         # compute max fixed width a tick can be given the available space
         spaces_per_tick = float(width) / len(self.ctx.timeline_range)
         self._tick_width = int(math.floor(spaces_per_tick))

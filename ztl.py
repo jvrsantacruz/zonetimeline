@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import io
 import os
+import re
 import math
 import datetime
 import itertools
@@ -72,33 +73,52 @@ class Time(object):
     def __init__(self):
         self.utc = pytz.utc.localize(datetime.datetime.utcnow())
         self.local = tzlocal.get_localzone().localize(datetime.datetime.now())
+        self.offset_parser = Matcher(r'^(UTC|GMT)?([+-]\d+)')
 
     def zone(self, name):
         d = self.time(name)
-        label = self.label(d)
+        label = self.label(name, d)
         return Zone(label, d, name)
 
     def time(self, name):
-        if name == 'local':
-            return self.local
-        elif name in pytz.all_timezones:
-            return self.utc.astimezone(pytz.timezone(name))
-        else:
-            return self.utc + datetime.timedelta(hours=int(name))
+        return self.utc.astimezone(self.parse_timezone(name))
 
-    def label(self, d):
+    def parse_timezone(self, name):
+        if name == 'local':
+            return tzlocal.get_localzone()
+        elif name in ('UTC', 'GMT'):
+            return pytz.UTC
+        elif self.offset_parser(name):
+            ref, offset = self.offset_parser.match.groups()
+            ref = (ref or 'GMT').replace('UTC', 'GMT')
+            offset = int(self._reverse_offset_sign(offset or 0))
+            return pytz.timezone('Etc/{}{:+d}'.format(ref, offset))
+        elif name in pytz.all_timezones:
+            return pytz.timezone(name)
+
+        raise click.BadArgumentUsage(u'Unknown timezone: "{}"'.format(name))
+
+    def label(self, name, d):
         label = str(d.tzinfo)
 
-        if label == 'UTC' and d != self.utc:  # calculated upon UTC
-            label += u'{:+02d}'.format(self.utc_offset(d))
+        # Fix offset based dates
+        if label.startswith('Etc/GMT') and not name.startswith('Etc/'):
+            # Remove pytz specific part
+            label = label.replace('Etc/', '')
+            # Revert POSIX name to the expected one
+            label = self._reverse_offset_sign(label.replace('Etc/', ''))
+            # Use UTC instead of GMT when user used UTC or not given
+            if not name.startswith('GMT'):
+                label = label.replace('GMT', 'UTC')
 
         if d == self.local:
             label += u' (local)'
 
         return label
 
-    def utc_offset(self, d):
-        return int((d - self.utc).total_seconds() // 3600)
+    def _reverse_offset_sign(self, name):
+        """Pytz POSIX behaviour have the sign reversed for compatibility"""
+        return name.replace('-', '|').replace('+', '-').replace('|', '+')
 
 
 class Context(object):
@@ -202,3 +222,13 @@ class Render(object):
     def render_line(self, header, tick):
         """click.echos a timeline line"""
         return header() + u''.join(tick(h) for h in self.ctx.timeline_range)
+
+
+class Matcher(object):
+    def __init__(self, source):
+        self.regex = re.compile(source)
+        self.match = None
+
+    def __call__(self, string):
+        self.match = self.regex.match(string)
+        return self.match

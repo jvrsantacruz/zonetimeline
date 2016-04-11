@@ -130,7 +130,7 @@ class Context(object):
         self.timeline_start = -1 * (nhours // 2)
         self.timeline_end = (nhours // 2)
         self.timeline_range = range(self.timeline_start, self.timeline_end)
-        self.marker_progress_ratio = self.time.utc.hour / 60.
+        self.marker_progress_ratio = self.time.utc.minute / 60.
         self.screen_width = width
 
     def validate(self):

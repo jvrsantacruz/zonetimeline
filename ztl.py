@@ -30,7 +30,19 @@ class List(click.ParamType):
             self.fail(u'%s is not a comma separated list' % value, param, ctx)
 
 
+class TimeParam(click.ParamType):
+    """Time in command line"""
+    name = 'time'
+
+    def convert(self, value, param, ctx):
+        if value and not re.match(r'\d{1,2}(:\d\d)?', value):
+            self.fail(u'%s is not valid time HH[:MM]' % value, param, ctx)
+        return value
+
+
 @click.command()
+@click.option('-t', '--time', type=TimeParam(),
+              help=u"Set current time HH[:MM]")
 @click.option('-n', '--nhours', default=24, show_default=True,
               help=u"Number of hours to display")
 @click.option('-z', '--zone', multiple=True,
@@ -45,7 +57,7 @@ def cli(config, **options):
     """zone time line"""
     update_no_override(options, parse_config(config or DEFAULT_CONFIG))
     options.update(marker_top=u'↓↓', marker_bottom=u'↑↑')
-    ctx = Context(Time(), **options)
+    ctx = Context(Times(), **options)
     ctx.validate()
     click.echo(Render(ctx).render(), nl=False)
 
@@ -69,10 +81,10 @@ def parse_config(path):
 Zone = collections.namedtuple('Zone', ['label', 'date', 'name'])
 
 
-class Time(object):
+class Times(object):
     def __init__(self):
         self.utc = pytz.utc.localize(datetime.datetime.utcnow())
-        self.local = tzlocal.get_localzone().localize(datetime.datetime.now())
+        self.local = self.utc.astimezone(tzlocal.get_localzone())
         self.offset_parser = Matcher(r'^(UTC|GMT)?([+-]\d+)')
 
     def zone(self, name):
@@ -111,7 +123,8 @@ class Time(object):
             if not name.startswith('GMT'):
                 label = label.replace('GMT', 'UTC')
 
-        if d == self.local:
+        # mark local time
+        if d.isoformat() == self.local.isoformat():
             label += u' (local)'
 
         return label
@@ -122,15 +135,16 @@ class Time(object):
 
 
 class Context(object):
-    def __init__(self, time, zone, zones, nhours, marker_top, marker_bottom,
+    def __init__(self, times, time, zone, zones, nhours, marker_top, marker_bottom,
                  width):
         self.time = time
-        self.zones = tuple(map(self.time.zone, itertools.chain(zones, zone)))
+        self.times = times
+        self.zones = tuple(map(self.times.zone, itertools.chain(zones, zone)))
         self.markers = [marker_top, marker_bottom]
         self.timeline_start = -1 * (nhours // 2)
         self.timeline_end = (nhours // 2)
         self.timeline_range = range(self.timeline_start, self.timeline_end)
-        self.marker_progress_ratio = self.time.utc.minute / 60.
+        self.marker_progress_ratio = self.times.utc.minute / 60.
         self.screen_width = width
 
     def validate(self):

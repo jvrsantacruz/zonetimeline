@@ -76,3 +76,5 @@ options. Present config settings matches the command line options.
 
 Available timezones are the ones listed in the [IANA Time Zone
 Database](https://www.iana.org/time-zones) (AKA *Olson tz database*).
+
+All available timezones can be listed using the `ztl list` subcommand.

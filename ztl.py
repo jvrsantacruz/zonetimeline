@@ -40,7 +40,7 @@ class TimeParam(click.ParamType):
         return value
 
 
-@click.command()
+@click.group(invoke_without_command=True)
 @click.option('-t', '--time', type=TimeParam(),
               help=u"Set current time HH[:MM]")
 @click.option('-n', '--nhours', default=24, show_default=True,
@@ -60,6 +60,13 @@ def cli(config, **options):
     ctx = Context(Times(), **options)
     ctx.validate()
     click.echo(Render(ctx).render(), nl=False)
+
+
+@cli.command('list')
+def list_timezones():
+    """list all available timezones"""
+    click.echo('IANA Time Zone Database {}'.format(pytz.OLSON_VERSION))
+    click.echo('\n'.join(pytz.all_timezones))
 
 
 def update_no_override(d, defaults):

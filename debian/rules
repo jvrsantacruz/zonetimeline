@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+%:
+	dh $@ --with python2 --buildsystem=pybuild --tests-pytest
+
+override_dh_compress:
+	dh_compress --exclude=README.md --exclude=config.default.toml
+
+override_dh_installman:
+	@echo "Building man page"
+	# pandoc MANUAL.md --standalone -t man | man -l -
+	pandoc README.md --standalone -t man > ztl.man.1
+	dh_installman ztl.man.1

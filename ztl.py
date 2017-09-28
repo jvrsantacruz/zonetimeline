@@ -35,14 +35,20 @@ class TimeParam(click.ParamType):
     name = 'time'
 
     def convert(self, value, param, ctx):
-        if value and not re.match(r'\d{1,2}(:\d\d)?', value):
-            self.fail(u'%s is not valid time HH[:MM]' % value, param, ctx)
-        return value
+        if value is not None and not isinstance(value, datetime.datetime):
+            try:
+                try:
+                    return datetime.datetime.strptime(value, '%H:%M')
+                except ValueError:
+                    return datetime.datetime.strptime(value, '%H')
+            except ValueError:
+                self.fail(u'%s is not valid time HH[:MM]' % value, param, ctx)
 
 
 @click.group(invoke_without_command=True)
 @click.option('-t', '--time', type=TimeParam(),
-              help=u"Set current time HH[:MM]")
+              default=datetime.datetime.utcnow(),
+              help=u"Change selected time in UTC: HH[:MM]")
 @click.option('-n', '--nhours', default=24, show_default=True,
               help=u"Number of hours to display")
 @click.option('-z', '--zone', multiple=True,
